@@ -1,25 +1,49 @@
-import logo from './logo.svg';
-import './App.css';
+import logo from "./logo.svg";
+import "./App.css";
+import React, { useState, useMemo, useEffect } from "react";
+import { observable, Reaction } from "mobx";
 
-function App() {
+function observer(component) {
+  return (props) => {
+    console.log("tt");
+    let [tick, updateTick] = useState(0);
+    let r = useMemo(
+      () =>
+        new Reaction(null, () => {
+          updateTick(tick + 1);
+        }),
+      [tick]
+    );
+
+    useEffect(() => () => {
+      console.log("disposed");
+      r.dispose();
+      return () => {
+        console.log("unmount");
+      };
+    });
+
+    let render;
+    r.track(() => {
+      render = component({ ...props, tick });
+    });
+    return render;
+  };
+}
+
+let data = observable({
+  name: "initial name",
+});
+
+export default observer(function App() {
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <p>name: {data.name}</p>
+        <input onChange={(e) => (data.name = e.target.value)} /> ☝🏼 change text
+        here!
       </header>
     </div>
   );
-}
-
-export default App;
+});
